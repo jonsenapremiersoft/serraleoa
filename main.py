@@ -4,7 +4,6 @@ from PyPDF2 import PdfReader
 import base64
 import io
 from moviepy.editor import VideoFileClip
-import whisper
 import os
 import tempfile
 
@@ -41,28 +40,27 @@ async def extract_pdf_content(data: PDFBase64):
 
 
 
-model = whisper.load_model("base")
-    
 @app.post("/convert_and_transcribe/")
 async def convert_and_transcribe(file: UploadFile = File(...)):
     try:
-        # Salvar o arquivo de vídeo temporariamente
+        # Save video to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
             temp_video.write(file.file.read())
             temp_video_path = temp_video.name
 
-        # Converter o vídeo em MP3
+        # Process video in chunks or use a more memory-efficient approach
         video_clip = VideoFileClip(temp_video_path)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_audio:
-            video_clip.audio.write_audiofile(temp_audio.name)
-            temp_audio_path = temp_audio.name
+        audio_path = tempfile.mktemp(suffix=".mp3")
 
-        # Transcrever o áudio usando Whisper
-        transcription = model.transcribe(temp_audio_path)
+        # Convert video to audio
+        video_clip.audio.write_audiofile(audio_path)
+        
+        # Load Whisper model and transcribe audio
+        transcription = model.transcribe(audio_path)
 
-        # Remover arquivos temporários
+        # Clean up temporary files
         os.remove(temp_video_path)
-        os.remove(temp_audio_path)
+        os.remove(audio_path)
 
         return {"transcription": transcription['text']}
     
