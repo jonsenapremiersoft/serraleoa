@@ -18,6 +18,10 @@ class PDFBase64(BaseModel):
 def fix_base64_padding(b64_string):
     return b64_string + '=' * (4 - len(b64_string) % 4)
 
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to my FastAPI application!"}
+
 @app.post("/extract_pdf_content/")
 async def extract_pdf_content(data: PDFBase64):
     try:
