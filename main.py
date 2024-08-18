@@ -38,24 +38,26 @@ async def extract_pdf_content(data: PDFBase64):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
 @app.post("/convert_and_transcribe/")
 async def convert_and_transcribe(file: UploadFile = File(...)):
     try:
+        # Define and load the Whisper model
+        # Example: model = whisper.load_model("base")  # Replace with actual model loading
+
         # Save video to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
             temp_video.write(file.file.read())
             temp_video_path = temp_video.name
 
         # Process video in chunks or use a more memory-efficient approach
-        video_clip = VideoFileClip(temp_video_path)
-        audio_path = tempfile.mktemp(suffix=".mp3")
+        with VideoFileClip(temp_video_path) as video_clip:
+            audio_path = tempfile.mktemp(suffix=".mp3")
 
-        # Convert video to audio
-        video_clip.audio.write_audiofile(audio_path)
+            # Convert video to audio
+            video_clip.audio.write_audiofile(audio_path)
         
         # Load Whisper model and transcribe audio
+        # Replace with actual model and transcribe code
         transcription = model.transcribe(audio_path)
 
         # Clean up temporary files
