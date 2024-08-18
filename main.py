@@ -6,9 +6,12 @@ import io
 from moviepy.editor import VideoFileClip
 import os
 import tempfile
-import whisper  # Import Whisper
+import whisper
 
 app = FastAPI()
+
+# Load the Whisper model once at startup
+model = whisper.load_model("base")
 
 class PDFBase64(BaseModel):
     file_base64: str
@@ -41,32 +44,27 @@ async def extract_pdf_content(data: PDFBase64):
 
 @app.post("/convert_and_transcribe/")
 async def convert_and_transcribe(file: UploadFile = File(...)):
-    model = whisper.load_model("base")  # Load Whisper model
-
-    temp_video_path = None
-    audio_path = None
     try:
         # Save video to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
             temp_video.write(file.file.read())
             temp_video_path = temp_video.name
 
-        # Convert video to audio
-        video_clip = VideoFileClip(temp_video_path)
-        audio_path = tempfile.mktemp(suffix=".mp3")
-        video_clip.audio.write_audiofile(audio_path)
+        # Process video in chunks or use a more memory-efficient approach
+        with VideoFileClip(temp_video_path) as video_clip:
+            audio_path = tempfile.mktemp(suffix=".mp3")
 
-        # Load Whisper model and transcribe audio
+            # Convert video to audio
+            video_clip.audio.write_audiofile(audio_path)
+        
+        # Transcribe audio
         transcription = model.transcribe(audio_path)
+
+        # Clean up temporary files
+        os.remove(temp_video_path)
+        os.remove(audio_path)
 
         return {"transcription": transcription['text']}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-    finally:
-        # Clean up temporary files
-        if temp_video_path and os.path.exists(temp_video_path):
-            os.remove(temp_video_path)
-        if audio_path and os.path.exists(audio_path):
-            os.remove(audio_path)
