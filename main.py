@@ -9,11 +9,15 @@ app = FastAPI()
 class PDFBase64(BaseModel):
     file_base64: str
 
+def fix_base64_padding(b64_string):
+    return b64_string + '=' * (4 - len(b64_string) % 4)
+
 @app.post("/extract_pdf_content/")
 async def extract_pdf_content(data: PDFBase64):
     try:
         # Decode the base64 string
-        pdf_bytes = base64.b64decode(data.file_base64)
+        fixed_base64 = fix_base64_padding(data.file_base64)
+        pdf_bytes = base64.b64decode(fixed_base64)
 
         # Use a memory buffer to simulate a file
         pdf_file = io.BytesIO(pdf_bytes)
