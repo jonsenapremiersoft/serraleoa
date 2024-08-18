@@ -70,7 +70,3 @@ async def convert_and_transcribe(file: UploadFile = File(...)):
             os.remove(temp_video_path)
         if audio_path and os.path.exists(audio_path):
             os.remove(audio_path)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
