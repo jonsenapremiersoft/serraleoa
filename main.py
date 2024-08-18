@@ -10,7 +10,7 @@ import whisper
 app = FastAPI()
 
 # Carrega o modelo Whisper uma vez durante o startup
-model = whisper.load_model("base")
+model = whisper.load_model("tiny")
 
 class PDFBase64(BaseModel):
     file_base64: str
@@ -54,6 +54,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
 
         # Remove o arquivo temporário
         os.remove(temp_audio_path)
+        del model
 
         return {"transcription": transcription['text']}
     
